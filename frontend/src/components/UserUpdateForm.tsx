@@ -30,10 +30,7 @@ export const UserUpdateForm = () => {
 
 
     async function sendUpdateUserRequest() {
-      
         try {
-
-           
             const response = await axios.put(`${BACKEND_URL}/api/v1/user/${userId}`, postInputs)
             console.log(response.data)
             navigate("/")

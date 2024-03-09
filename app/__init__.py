@@ -5,10 +5,6 @@ from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__)
-
-
-
-    app = Flask(__name__)
     CORS(app)
 
     app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://learn.deepanshu:nCJW4YR9DUPV@ep-orange-pine-a5e2k0bs.us-east-2.aws.neon.tech/flask?sslmode=require"
