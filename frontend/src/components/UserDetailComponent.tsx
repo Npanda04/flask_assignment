@@ -1,7 +1,6 @@
 import { CardTitle, CardDescription, CardHeader, CardContent, CardFooter, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TableHead, TableRow, TableHeader, TableCell, TableBody, Table } from "@/components/ui/table";
-import { TrashIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BACKEND_URL } from "@/config";
@@ -27,6 +26,7 @@ export const UserDetailComponent = () => {
   const userDetail = async () => {
     const response = await axios.get(`${BACKEND_URL}/api/v1/user?page=${pagination.page}`);
     setUsers(response.data.users);
+    console.log(response.data.users)
     setPagination({
       ...pagination,
       total_pages: response.data.pagination.total_pages,
@@ -97,6 +97,7 @@ export const UserDetailComponent = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Username</TableHead>
                 <TableHead>Place</TableHead>
+                <TableHead>Amount</TableHead>
                 <TableHead>Action</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
@@ -110,6 +111,7 @@ export const UserDetailComponent = () => {
                   </TableCell>
                   <TableCell>{user.username}</TableCell>
                   <TableCell>{user.place}</TableCell>
+                  <TableCell>{user.amount}</TableCell>
                   <TableCell>
 
                     <DeleteButton onClick={() => handleDelete(user.id)}/>

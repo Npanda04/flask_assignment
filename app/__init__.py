@@ -1,6 +1,7 @@
 from flask import Flask
 from app.models import db, ma
 from app.routes.userRoutes import user_routes_bp
+from flask_migrate import Migrate
 from flask_cors import CORS
 
 def create_app():
@@ -13,6 +14,9 @@ def create_app():
 
     db.init_app(app)
     ma.init_app(app)
+
+    # Flask-Migrate Initialization
+    migrate = Migrate(app, db)
 
     with app.app_context():
         db.create_all()

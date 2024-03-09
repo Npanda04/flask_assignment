@@ -1,7 +1,11 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource, reqparse
 from sqlalchemy.exc import IntegrityError
-from app.models import db, User, UserSchema
+from app.models import db, User, UserSchema, Balance, BalanceSchema
+from random import randint
+from sqlalchemy.orm import joinedload
+
+
 
 user_routes_bp = Blueprint('user_routes', __name__)
 api = Api(user_routes_bp)
@@ -15,37 +19,41 @@ user_parser.add_argument('place', type=str, default='', help='Place')
 user_schema = UserSchema(many= True)
 
 
+
 class HealthCheckResource(Resource):
     def get(self):
         return {'status': 'Server is up and running'}
 
 class UserListResource(Resource):
-
-    # def get(self):
-    #     users = User.query.all()
-    #     return {'users': user_schema.dump(users)}
-
     def get(self):
-        page = request.args.get('page', default=1, type=int)
-        per_page = request.args.get('per_page', default=5, type=int)
+        # Assuming you have pagination parameters (page, per_page)
+        page = int(request.args.get('page', default=1))
+        per_page = int(request.args.get('per_page', default=5))
 
-        # Ensure that the page number is not less than 1
-        page = max(page, 1)
-
-        # Calculate the offset based on page and per_page
         offset = (page - 1) * per_page
 
-        # Query users with pagination and sorting
-        users = (
+        # Query users with pagination and include balance details
+        users_with_balance = (
             User.query
-            .order_by(User.username)  # Change to the desired sorting column
+            .options(joinedload(User.balance))  # Adjust the relationship name based on your implementation
+            .order_by(User.username)
             .offset(offset)
             .limit(per_page)
             .all()
         )
 
-        # Serialize the users using the UserSchema
-        serialized_users = user_schema.dump(users)
+        # Extract user and balance data
+        result = [
+            {
+                'id': user.id,
+                'firstname': user.firstname,
+                'lastname': user.lastname,
+                'username': user.username,
+                'place': user.place,
+                'amount': user.balance.amount if user.balance else None  # Use None if no balance is found
+            }
+            for user in users_with_balance
+        ]
 
         # Build pagination information
         pagination = {
@@ -55,18 +63,39 @@ class UserListResource(Resource):
             'total_items': User.query.count(),
         }
 
-        return {'users': serialized_users, 'pagination': pagination}
+        return jsonify({'users': result, 'pagination': pagination})
+
+
+
+
 
     def post(self):
         args = user_parser.parse_args()
+        random_balance = randint(1000, 20000)
+
         new_user = User(
             firstname=args['firstname'],
             lastname=args['lastname'],
             username=args['username'],
             place=args['place']
         )
+
+
+        # Check if the username already exists
+        existing_user = User.query.filter_by(username=args['username']).first()
+        if existing_user:
+            return {'error': 'Username already exists'}, 400
+
+        # Assuming there is a relationship between User and Balance tables
+        new_user_balance = Balance(
+            amount=random_balance
+        )
+
+        # Set the relationship between User and Balance
+        new_user.balance = new_user_balance
         try:
             db.session.add(new_user)
+            db.session.add(new_user_balance)
             db.session.commit()
             return {'message': 'User created successfully'}, 201
         except IntegrityError as e:
